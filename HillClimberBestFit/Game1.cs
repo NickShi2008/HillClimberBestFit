@@ -62,18 +62,37 @@ namespace HillClimberBestFit
             if (ms.LeftButton == ButtonState.Pressed)
             {
                 points.Add(new PointCircle(new Vector2(ms.X, ms.Y), 2, sb));
+
+                if (line != null)
+                {
+                    currError = MAECalc(points, changedLine);
+                    minError = currError;
+                }
             }
 
-            if (Keyboard.GetState().IsKeyDown(Keys.Enter))
+            if (Keyboard.GetState().IsKeyDown(Keys.Enter) && !hasStarted)
             {
                 hasStarted = true;
                 if (hasStarted && !hasCreated)
                 {
-                    line = new Line(new Vector2(random.Next(0, width), random.Next(0, height)), (float)(random.NextDouble() * 4 - 2), sb, width);
+                    line = new Line(new Vector2(0, random.Next(0, height)),
+                        (float)(random.NextDouble() * 4 - 2), sb, width, height);
                     changedLine = new Line(line);
                     hasCreated = true;
                 }
                 
+            }
+
+            if(Keyboard.GetState().IsKeyDown(Keys.Back))
+            {
+                hasStarted = false;
+                hasCreated = false;
+                hasFinished = false;
+                points.Clear();
+                line = null;
+                changedLine = null;
+                minError = float.MaxValue;
+                currError = float.MaxValue;
             }
 
             AnimateLineImprovement();
@@ -114,28 +133,31 @@ namespace HillClimberBestFit
 
             foreach (PointCircle pc in points)
             {
-                error += line.GetError(pc.point.X, pc.point.Y);
+                error += line.GetError(pc.point);
             }
 
             return error / points.Count;
         }
-        private float timer = 0;
-        private float timerDelay = 0.5f;
-        private int count = 0;
 
         public void AnimateLineImprovement()
         {
-            if (currError < 0f) throw new Exception("impossible");
 
-                if (hasCreated && currError > 0f)
+            if (hasCreated && currError > 0.01f)
+            {
+                for (int i = 0; i < 100; i++)
                 {
-                    int choice = random.Next(0, 2);
-                    if (choice == 0)
-                        changedLine.yIntercept.Y += changedLine.yIntercept.Y + (float)random.NextDouble() * MathF.Pow(-1, random.Next(0, 2));
-                    else
-                        changedLine.slope += changedLine.slope + (float)random.NextDouble() * MathF.Pow(-1, random.Next(0, 2));
+                    //idk if this works well, but it did help a little so go me
+                    float scale = MathF.Max(0.01f, minError / currError);
 
-                    float currError = MAECalc(points, changedLine);
+                    int choice = random.Next(0, 2);
+                    float change = (float)(random.NextDouble() * 2 - 1);
+                    float valChange = change * scale;
+                    if (choice == 0)
+                        changedLine.yIntercept.Y += valChange;
+                    else
+                        changedLine.slope += valChange;
+
+                    currError = MAECalc(points, changedLine);
 
                     if (currError < minError)
                     {
@@ -147,12 +169,13 @@ namespace HillClimberBestFit
                         changedLine = new Line(line);
                     }
                 }
-                else if (currError <= 0f)
-                {
-                    hasCreated = false;
-                    hasStarted = false;
-                    hasFinished = true;
-                }
+            }
+            else if (currError <= 0.01f)
+            {
+                hasCreated = false;
+                hasStarted = false;
+                hasFinished = true;
+            }
         }
     }
 }

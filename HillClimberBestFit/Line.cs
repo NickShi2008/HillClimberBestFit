@@ -15,16 +15,15 @@ namespace HillClimberBestFit
         public float slope;
         public SpriteBatch sb;
         public Vector2 pointOne;
-        public Vector2 pointTwo;
         public int screenWidth;
-        public Line(Vector2 yIntercept, float slope, SpriteBatch sb, int width)
+        public int screenHeight;
+        public Line(Vector2 yIntercept, float slope, SpriteBatch sb, int width, int height)
         {
             this.yIntercept = yIntercept;
             this.slope = slope;
             this.sb = sb;
             screenWidth = width;
             pointOne = new Vector2(width, slope * width + yIntercept.Y);
-            pointTwo = new Vector2(0, yIntercept.Y);
         }
 
         public Line(Line line)
@@ -34,22 +33,22 @@ namespace HillClimberBestFit
             this.sb = line.sb;
             this.screenWidth = line.screenWidth;
             pointOne = new Vector2(screenWidth, slope * screenWidth + yIntercept.Y);
-            pointTwo = new Vector2(0, yIntercept.Y);
         }
+
 
         public void Draw()
         {
-            sb.DrawLine(pointTwo, pointOne, Color.Red);
-            //sb.DrawLine()
+            sb.DrawLine(yIntercept, pointOne, Color.Red);
         }
-        public float GetError(float x, float y)
+        public float GetError(Vector2 point)
         {
-            float lineY = CalcY(x);
-            return Math.Abs(lineY - y);
+            Vector2 convert = (point); 
+            float lineY = CalcY(convert.X);
+            return Math.Abs(lineY - convert.Y);
         }
         public float CalcY(float X)
         {
-            return slope * X + yIntercept.Y;
+            return (new Vector2(X,slope * X + yIntercept.Y)).Y;
         }
 
 
