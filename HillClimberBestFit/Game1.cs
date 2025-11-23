@@ -5,6 +5,7 @@ using MonoGame.Extended;
 using System.Collections.Generic;
 using System;
 using System.Security.Cryptography.X509Certificates;
+using System.Linq;
 
 namespace HillClimberBestFit
 {
@@ -14,6 +15,7 @@ namespace HillClimberBestFit
         private SpriteBatch sb;
         private MouseState previousMouseState;
         private List<PointCircle> points = new List<PointCircle>();
+        private List<PointCircle> normPoints = new List<PointCircle>();
         int halfWidth;
         int halfHeight;
         int width;
@@ -62,10 +64,10 @@ namespace HillClimberBestFit
             if (ms.LeftButton == ButtonState.Pressed)
             {
                 points.Add(new PointCircle(new Vector2(ms.X, ms.Y), 2, sb));
-
+                normPoints = NormalizeList(points);
                 if (line != null)
                 {
-                    currError = MAECalc(points, changedLine);
+                    currError = MAECalc(normPoints, changedLine);
                     minError = currError;
                 }
             }
@@ -138,6 +140,34 @@ namespace HillClimberBestFit
 
             return error / points.Count;
         }
+
+        public List<PointCircle> NormalizeList(List<PointCircle> points)
+        {
+            List<PointCircle> normPoints = new List<PointCircle>();
+            Vector2 maxPoint = new Vector2(0, 0);
+            Vector2 minPoint = new Vector2(int.MaxValue, int.MaxValue);
+            foreach (PointCircle p in points)
+            {
+                if (p.point.X > maxPoint.X)
+                    maxPoint.X = (int)p.point.X;
+                if (p.point.Y > maxPoint.Y)
+                    maxPoint.Y = (int)p.point.Y;
+                if (p.point.X < minPoint.X)
+                    minPoint.X = (int)p.point.X;
+                if (p.point.Y < minPoint.Y)
+                    minPoint.Y = (int)p.point.Y;
+            }
+            foreach (PointCircle pc in points)
+            {
+                Vector2 normPoint = new Vector2(
+                    (int)((pc.point.X - minPoint.X) / (float)(maxPoint.X - minPoint.X) * width),
+                    (int)((pc.point.Y - minPoint.Y) / (float)(maxPoint.Y - minPoint.Y) * height)
+                );
+                normPoints.Add(new PointCircle(normPoint, pc.radius, sb));
+            }
+            return normPoints;
+        }
+
 
         public void AnimateLineImprovement()
         {
